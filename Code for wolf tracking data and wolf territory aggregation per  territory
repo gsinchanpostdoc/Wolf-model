@@ -1,0 +1,343 @@
+1.	Wolf data aggregation to the grids:
+import os
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import box
+
+# ---------------------------------------------------------------------
+# 0. Paths
+# ---------------------------------------------------------------------
+data_dir = r"D:\Wolf\Code and data"
+
+excel_path = os.path.join(data_dir, "Wolf_data_TaigaClimate.xlsx")
+grid_path = os.path.join(data_dir, "sweden_norway_grid_50km_centers.csv")
+output_path = os.path.join(data_dir, "wolf_data.csv")
+
+# ---------------------------------------------------------------------
+# 1. Read grid centers and build 50 km x 50 km polygons
+# ---------------------------------------------------------------------
+grid_df = pd.read_csv(grid_path)
+
+# Points in WGS84
+grid_points = gpd.GeoDataFrame(
+    grid_df.copy(),
+    geometry=gpd.points_from_xy(grid_df["centroid_lon"], grid_df["centroid_lat"]),
+    crs="EPSG:4326",
+)
+
+# Project to the same projected CRS as YRT90/XRT90 (assumed RT90 2.5 gon V)
+# If needed, change EPSG:3021 to the correct EPSG for your RT90 coordinates.
+grid_points_proj = grid_points.to_crs(epsg=3021)
+
+# Build 50 km squares around each center (half side = 25 km)
+half_side = 25_000  # meters
+polys = []
+for pt in grid_points_proj.geometry:
+    x_c, y_c = pt.x, pt.y
+    polys.append(
+        box(
+            x_c - half_side,
+            y_c - half_side,
+            x_c + half_side,
+            y_c + half_side,
+        )
+    )
+
+# Replace point geometry with polygon geometry
+grid_polygons = grid_points_proj.copy()
+grid_polygons["geometry"] = polys  # now each row is a 50x50 km cell polygon
+
+# ---------------------------------------------------------------------
+# 2. Read Excel sheets
+# ---------------------------------------------------------------------
+pack_df = pd.read_excel(excel_path, sheet_name="Packsize known packs")
+terr_df = pd.read_excel(excel_path, sheet_name="TerritorySize")
+cp_df = pd.read_excel(excel_path, sheet_name="CentrePointsWolfTerritories")
+
+# ---------------------------------------------------------------------
+# 3. Prepare PackInfo (pack size and region per year & pack)
+# ---------------------------------------------------------------------
+pack_info = pack_df[["Vinter", "ReproYear", "Revir", "Fylke/Län", "MeanPackSize"]].copy()
+
+# Clean names and types
+pack_info["Revir"] = pack_info["Revir"].astype(str).str.strip()
+pack_info["Fylke/Län"] = pack_info["Fylke/Län"].astype(str).str.strip()
+pack_info["ReproYear"] = pd.to_numeric(pack_info["ReproYear"], errors="coerce").astype(
+    "Int64"
+)
+pack_info["Vinter"] = pd.to_numeric(pack_info["Vinter"], errors="coerce").astype(
+    "Int64"
+)
+
+# ---------------------------------------------------------------------
+# 4. Prepare TerritorySeason (one row per territory-year)
+# ---------------------------------------------------------------------
+terr = terr_df.copy()
+
+# Extract territory name from Wolfyear (e.g. "Bograngen_2019" -> "Bograngen")
+terr["Wolfyear"] = terr["Wolfyear"].astype(str)
+terr["TerritoryName"] = terr["Wolfyear"].str.rsplit("_", n=1).str[0].str.strip()
+
+# Convert mcp_ha (hectares) to km²
+terr["territory_km2"] = terr["mcp_ha"] / 100.0
+
+# Parse dates
+terr["startdate"] = pd.to_datetime(terr["startdate"], errors="coerce")
+terr["enddate"] = pd.to_datetime(terr["enddate"], errors="coerce")
+
+# Ensure numeric types where appropriate
+terr["Year"] = pd.to_numeric(terr["Year"], errors="coerce").astype("Int64")
+terr["nmonths"] = pd.to_numeric(terr["nmonths"], errors="coerce").astype("Int64")
+
+# pack_n is an ID like 'Aamäck_1' → keep as string
+terr["pack_n"] = terr["pack_n"].astype(str).str.strip()
+
+terr_season = terr[
+    [
+        "Wolfyear",
+        "TerritoryName",
+        "Year",
+        "startdate",
+        "enddate",
+        "nmonths",
+        "mcp_ha",
+        "territory_km2",
+        "pack_n",
+        "Latitude",
+    ]
+].copy()
+
+# ---------------------------------------------------------------------
+# 5. Centre points and mapping Winter -> ReproYear
+# ---------------------------------------------------------------------
+cp = cp_df[["Winter", "Territory", "YRT90", "XRT90"]].copy()
+cp["TerritoryName"] = cp["Territory"].astype(str).str.strip()
+cp["Winter"] = pd.to_numeric(cp["Winter"], errors="coerce").astype("Int64")
+
+# Map winter code -> reproduction year using PackInfo
+winter_year_map = (
+    pack_info[["Vinter", "ReproYear"]]
+    .drop_duplicates()
+    .rename(columns={"Vinter": "Winter"})
+)
+cp_year = cp.merge(winter_year_map, on="Winter", how="left")
+
+# ---------------------------------------------------------------------
+# 6. Attach coordinates to territory-season (TerritoryName + Year)
+# ---------------------------------------------------------------------
+terr_coord = terr_season.merge(
+    cp_year[["TerritoryName", "ReproYear", "YRT90", "XRT90"]],
+    left_on=["TerritoryName", "Year"],
+    right_on=["TerritoryName", "ReproYear"],
+    how="left",
+)
+
+# ---------------------------------------------------------------------
+# 7. Attach MeanPackSize and region (Fylke/Län)
+#    Match on territory name (Revir) + year (ReproYear)
+# ---------------------------------------------------------------------
+terr_full = terr_coord.merge(
+    pack_info[["ReproYear", "Revir", "Fylke/Län", "MeanPackSize"]],
+    left_on=["TerritoryName", "Year"],
+    right_on=["Revir", "ReproYear"],
+    how="left",
+)
+
+# Drop duplicated year columns if present
+terr_full = terr_full.drop(columns=["ReproYear_x", "ReproYear_y"], errors="ignore")
+
+# ---------------------------------------------------------------------
+# 8. Expand territory-year into monthly records
+# ---------------------------------------------------------------------
+rows = []
+
+for _, row in terr_full.iterrows():
+    start = row["startdate"]
+    nmonths = row["nmonths"]
+
+    if pd.isna(start) or pd.isna(nmonths):
+        continue
+
+    try:
+        nmonths_int = int(nmonths)
+    except Exception:
+        continue
+
+    # First day of start month
+    start_month = pd.Timestamp(start.year, start.month, 1)
+    months = pd.date_range(start=start_month, periods=nmonths_int, freq="MS")
+
+    for ts in months:
+        new_row = row.copy()
+        new_row["calendar_year"] = ts.year
+        new_row["calendar_month"] = ts.month
+        rows.append(new_row)
+
+pack_month = pd.DataFrame(rows)
+
+# Keep only rows with valid coordinates
+pack_month = pack_month.dropna(subset=["XRT90", "YRT90"])
+
+# ---------------------------------------------------------------------
+# 9. Convert monthly pack data to GeoDataFrame (same CRS as grid)
+# ---------------------------------------------------------------------
+pack_month_gdf = gpd.GeoDataFrame(
+    pack_month,
+    geometry=gpd.points_from_xy(pack_month["XRT90"], pack_month["YRT90"]),
+    crs="EPSG:3021",
+)
+
+# ---------------------------------------------------------------------
+# 10. Spatial join: assign each pack-month to a grid cell
+# ---------------------------------------------------------------------
+# Only keep grid columns we need for output
+grid_for_join = grid_polygons[["centroid_lon", "centroid_lat", "geometry"]].copy()
+
+pack_grid = gpd.sjoin(
+    pack_month_gdf,
+    grid_for_join,
+    how="inner",
+    predicate="within",  # if your geopandas is older, replace with op="within"
+)
+
+# ---------------------------------------------------------------------
+# 11. Aggregate to grid x year x month
+# ---------------------------------------------------------------------
+group_cols = ["centroid_lon", "centroid_lat", "calendar_year", "calendar_month"]
+
+agg = (
+    pack_grid.groupby(group_cols)
+    .agg(
+        # number of distinct packs in that grid-year-month
+        pack_n=("pack_n", lambda x: x.dropna().nunique()),
+        # mean pack size across those packs
+        mean_pack_size=("MeanPackSize", "mean"),
+        # mean territory size (km²) across those packs
+        mean_territory_km2=("territory_km2", "mean"),
+    )
+    .reset_index()
+)
+
+# Rename columns for clarity
+agg = agg.rename(
+    columns={
+        "calendar_year": "year",
+        "calendar_month": "month",
+    }
+)
+
+# ---------------------------------------------------------------------
+# 12. Write minimal output CSV
+# ---------------------------------------------------------------------
+# Columns: grid center lon/lat, year, month, pack_n, mean_pack_size, mean_territory_km2
+agg[
+    [
+        "centroid_lon",
+        "centroid_lat",
+        "year",
+        "month",
+        "pack_n",
+        "mean_pack_size",
+        "mean_territory_km2",
+    ]
+].to_csv(output_path, index=False)
+
+print(f"Finished. Output written to:\n{output_path}")
+2.	Testing grid wise territory agreegation visually:
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pyproj import Transformer
+import os
+
+def parse_winter_to_years(winter_val):
+    """Parse Winter column value to Start_Year and End_Year."""
+    winter_str = str(int(winter_val)).zfill(4)
+    start_yy = int(winter_str[:2])
+    end_yy = int(winter_str[2:])
+    start_year = 1900 + start_yy if start_yy >= 90 else 2000 + start_yy
+    end_year = 1900 + end_yy if end_yy >= 90 else 2000 + end_yy
+    return start_year, end_year
+
+
+def main():
+    # ------------------------------------------------------------------
+    # FIXED PATHS FOR YOUR WINDOWS ENVIRONMENT
+    # ------------------------------------------------------------------
+    base_dir = r"Z:\Wolf\Code and data"
+
+    wolf_excel_path = os.path.join(base_dir, "Wolf_data_TaigaClimate.xlsx")
+    grid_csv_path   = os.path.join(base_dir, "sweden_norway_grid_50km_centers.csv")
+    output_dir      = os.path.join(base_dir, "territory_plots")
+
+    # Load data
+    wolf_df = pd.read_excel(wolf_excel_path, sheet_name='CentrePointsWolfTerritories')
+    grid_df = pd.read_csv(grid_csv_path)
+
+    # Transform UTM33 to WGS84
+    utm33_to_wgs84 = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
+    wolf_df['lon'], wolf_df['lat'] = utm33_to_wgs84.transform(
+        wolf_df['X33'].values, wolf_df['Y33'].values
+    )
+
+    # Parse Winter column into Start_Year and End_Year
+    wolf_df['Start_Year'], wolf_df['End_Year'] = zip(*wolf_df['Winter'].apply(parse_winter_to_years))
+
+    # Unique years
+    years = sorted(wolf_df['Start_Year'].unique())
+    print(f"Years to plot: {years}")
+    print(f"Total: {len(years)} plots")
+
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Plot per year
+    for year in years:
+        fig, ax = plt.subplots(figsize=(10, 12))
+
+        # Grid points
+        ax.scatter(
+            grid_df['centroid_lon'], grid_df['centroid_lat'],
+            c='lightgray', s=10, alpha=0.5, label='Grid centroids'
+        )
+
+        # Territories of this year
+        year_data = wolf_df[wolf_df['Start_Year'] == year]
+
+        ax.scatter(
+            year_data['lon'], year_data['lat'],
+            c='red', s=50, alpha=0.7,
+            edgecolors='black', linewidths=0.5,
+            label=f'Territories (n={len(year_data)})'
+        )
+
+        ax.set_xlabel('Longitude')
+        ax.set_ylabel('Latitude')
+        ax.set_title(f'Wolf Territories - Winter {year}/{year+1}')
+        ax.legend(loc='upper right')
+        ax.set_aspect('equal', adjustable='box')
+
+        # Extent from grid
+        ax.set_xlim(grid_df['centroid_lon'].min() - 1, grid_df['centroid_lon'].max() + 1)
+        ax.set_ylim(grid_df['centroid_lat'].min() - 1, grid_df['centroid_lat'].max() + 1)
+
+        plt.tight_layout()
+
+        # Save to Z: drive
+        outfile = os.path.join(output_dir, f"territories_{year}_{year+1}.png")
+        plt.savefig(outfile, dpi=150)
+        plt.close()
+
+        print(f"Saved: {outfile}")
+
+    print("\nAll plots created!")
+
+
+if __name__ == "__main__":
+    main()
+Outputs:
+
+
+
