@@ -476,6 +476,10 @@ def main() -> int:
         model_df, gbif_wide, "H",                  "gbif_D_wolf",  "H_cal",                  rho_wlf)
 
     # Per-grid summary agreement index: mean of available rhos, clipped [-1,1].
+    # Drop any pre-existing gbif_agreement column so re-runs don't create
+    # gbif_agreement_x / gbif_agreement_y duplicates on merge.
+    if "gbif_agreement" in model_df.columns:
+        model_df = model_df.drop(columns=["gbif_agreement"])
     g_agree = agree.set_index("GridID")[
         ["rho_roe", "rho_moose", "rho_wolf"]].mean(axis=1).rename("gbif_agreement")
     model_df = model_df.merge(g_agree, on="GridID", how="left")

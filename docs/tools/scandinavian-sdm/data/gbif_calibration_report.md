@@ -35,14 +35,14 @@ per-grid time series are short or noisy (Beale & Lennon, 2012).
 Original columns:
 stat  D_roe   D_moose  pred_roe_density  pred_moose_density  H     
 ----  ------  -------  ----------------  ------------------  ------
-mean  0.0689  0.1233   0.0781            0.1401              0.2527
-std   0.1194  0.1900   0.1233            0.1970              0.0511
+mean  0.1155  0.1593   0.0895            0.1436              0.2527
+std   0.0515  0.0455   0.1411            0.1511              0.0511
 
 Calibrated columns:
 stat  D_roe_cal  D_moose_cal  pred_roe_density_cal  pred_moose_density_cal  H_cal 
 ----  ---------  -----------  --------------------  ----------------------  ------
-mean  0.0786     0.1260       0.0893                0.1433                  0.2541
-std   0.1209     0.1859       0.1241                0.1923                  0.0514
+mean  0.1252     0.1622       0.0992                0.1464                  0.2541
+std   0.0629     0.0561       0.1409                0.1469                  0.0514
 
 
 ## Method
