@@ -109,6 +109,31 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
   font-size: 12px; color: var(--muted); line-height: 1.55;
 }
 
+.disclaimer-banner {
+  background: #fff4d6; border-bottom: 1px solid #e5c76b; color: #6b4e0b;
+  padding: 10px 20px; font-size: 13px; line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.disclaimer-banner strong { color: #5a3d00; font-weight: 700; }
+.disclaimer-banner .badge {
+  flex-shrink: 0; background: #c78100; color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.citation-block {
+  margin-top: 24px; padding: 16px 18px; background: var(--cream-2);
+  border-left: 3px solid var(--green-dark); border-radius: 4px;
+  font-size: 12px; line-height: 1.6; color: var(--text);
+}
+.citation-block .cite-label {
+  font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark);
+  font-size: 13px; font-weight: 700; display: block; margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.citation-block .cite-body { font-family: 'Source Serif 4', Georgia, serif; }
+
 .loading {
   position: fixed; inset: 42px 0 0 0; background: var(--cream);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -129,9 +154,17 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
 <div class="tool-header">
   <div>
     <span class="tool-title">Scandinavian Species Distribution Models</span>
-    <span class="tool-meta">v2.1 &middot; Wolf, Roe deer, Moose &middot; Map 2025&ndash;2060 &middot; Time series 1999&ndash;2060</span>
+    <span class="tool-meta">v2.2 &middot; Wolf, Roe deer, Moose &middot; Map 2025&ndash;2060 &middot; Time series 1999&ndash;2060</span>
   </div>
   <a href="../../">&larr; Back to Research Tools</a>
+</div>
+
+<div class="disclaimer-banner" role="note" aria-label="Interface-testing disclaimer">
+  <span class="badge">Preview</span>
+  <span>
+    <strong>Interface-testing version &mdash; not for predictions.</strong>
+    The map and time-series outputs, especially for <strong>moose</strong> and <strong>roe deer</strong>, are still under expert review and should not be used for management, policy, or research inference at this stage. Final predictions will be released after internal validation by Dr.&nbsp;Barbara Zimmermann (INN) and co-authors.
+  </span>
 </div>
 
 <div id="loader" class="loading" aria-live="polite">
@@ -210,6 +243,17 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
     <p class="footer-note">
       Data: 374 Scandinavian grid cells (Norway&nbsp;+ Sweden) on a ~50&nbsp;km lattice. Svalbard and edge-case cells with incomplete prediction coverage have been excluded. Model version v2.0. Native browser build using Leaflet, Plotly.js, and Arquero; no Python runtime required; no data leaves your device.
     </p>
+
+    <p class="footer-note" style="margin-top:14px; color:#7a5a10;">
+      <strong>Disclaimer.</strong> This is an interface-testing release. Early review (April&nbsp;2026) flagged that moose and roe deer predictions do not yet appear ecologically reasonable across all grids and scenarios; these outputs are under active validation and must not be cited, redistributed, or used for management decisions until a validated v3 release is announced.
+    </p>
+
+    <div class="citation-block">
+      <span class="cite-label">Suggested citation</span>
+      <span class="cite-body">
+        Ghosh, S., Zimmermann, B., &amp; Franklin, O. (2026). <em>Scandinavian Species Distribution Models: a wolf&ndash;roe deer&ndash;moose ecosystem explorer for Norway and Sweden under five IPCC SSP pathways</em> (Interface-testing release, v2.2) [Software]. International Institute for Applied Systems Analysis (IIASA). Available at <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/">https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</a>.
+      </span>
+    </div>
 
   </section>
 
