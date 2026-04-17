@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Research Tools &mdash; Dr. Sinchan Ghosh</title>
+<meta name="description" content="Interactive decision-support tools for foresters, game hunters, and wildlife managers. Maintained by Dr. Sinchan Ghosh." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="40" height="40" role="img">
+          <circle cx="24" cy="24" r="22" fill="#1f3a2e" />
+          <path d="M14 30 L20 18 L24 24 L28 16 L34 30 Z" fill="#a9c7a0" />
+          <circle cx="24" cy="11" r="2.2" fill="#e8d9a3" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Dr. Sinchan Ghosh</div>
+        <div class="brand-sub">Applied Ecology &middot; Wildlife Population Modelling</div>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#tools">Research Tools</a>
+      <a href="#about">About</a>
+      <a href="#cite">Citation</a>
+      <a href="#contact">Contact</a>
+      <a href="https://gsinchanpostdoc.github.io/Profile/" rel="noopener">Personal site &rarr;</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-inner">
+    <p class="eyebrow">Research Tools</p>
+    <h1>Field-ready models for the people who manage Scandinavian wildlife.</h1>
+    <p class="lede">
+      Interactive, evidence-based tools translating peer-reviewed population models into
+      maps and scenarios that foresters, game hunters, and wildlife managers can read,
+      query, and act on &mdash; no coding, no setup.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#tools">Open a tool</a>
+      <a class="btn btn-ghost" href="#about">How to read the outputs</a>
+    </div>
+  </div>
+</section>
+
+<main id="tools" class="container">
+  <div class="section-head">
+    <h2>Available tools</h2>
+    <p class="section-sub">Each tool runs entirely in your browser. Data updates on release; the model version and last-updated date are shown on every tool page.</p>
+  </div>
+
+  <article class="tool-card featured">
+    <div class="tool-card-media" aria-hidden="true">
+      <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#dfe9dc"/>
+            <stop offset="100%" stop-color="#b8cfb0"/>
+          </linearGradient>
+        </defs>
+        <rect width="400" height="220" fill="url(#sky)"/>
+        <path d="M0 170 C 60 140, 110 190, 170 160 S 280 130, 400 170 L 400 220 L 0 220 Z" fill="#4a6b4a" opacity="0.7"/>
+        <path d="M0 185 C 80 160, 140 205, 210 180 S 320 160, 400 190 L 400 220 L 0 220 Z" fill="#2f4a34" opacity="0.85"/>
+        <g fill="#c94c3a">
+          <circle cx="90" cy="95" r="6"/><circle cx="140" cy="80" r="10"/><circle cx="210" cy="105" r="8"/>
+          <circle cx="265" cy="70" r="12"/><circle cx="320" cy="95" r="7"/><circle cx="355" cy="115" r="5"/>
+        </g>
+        <g fill="#1f3a2e" opacity="0.6">
+          <circle cx="75" cy="130" r="4"/><circle cx="180" cy="140" r="5"/><circle cx="290" cy="135" r="4"/>
+        </g>
+      </svg>
+    </div>
+    <div class="tool-card-body">
+      <div class="tool-tags">
+        <span class="tag tag-live">Live</span>
+        <span class="tag">Scandinavia</span>
+        <span class="tag">Wolf &middot; Roe deer &middot; Moose</span>
+        <span class="tag">1999&ndash;2060</span>
+      </div>
+      <h3>Scandinavian Species Distribution Models</h3>
+      <p class="tool-summary">
+        Explore grid-level density and habitat projections for wolves and their prey under
+        historical conditions (1999&ndash;2015) and five IPCC SSP climate scenarios
+        (2016&ndash;2060). Click any grid cell to see a full time series and scenario spread.
+      </p>
+
+      <div class="tool-audience">
+        <div>
+          <h4>For foresters</h4>
+          <p>Project ungulate browsing pressure on regeneration stands under different climate futures, by county and grid.</p>
+        </div>
+        <div>
+          <h4>For game hunters</h4>
+          <p>Compare roe deer and moose density trends in your management area; anticipate wolf territory presence decade by decade.</p>
+        </div>
+        <div>
+          <h4>For wildlife managers</h4>
+          <p>Assess pack size, territory number, and prey availability jointly &mdash; the variables that drive quota and depredation policy.</p>
+        </div>
+      </div>
+
+      <div class="tool-cta">
+        <a class="btn btn-primary" href="./tools/scandinavian-sdm/">Open the tool &rarr;</a>
+        <a class="btn btn-ghost" href="#methods">Methods &amp; assumptions</a>
+      </div>
+      <p class="tool-meta">
+        <strong>Model version:</strong> v2.0 (updated predictions) &middot;
+        <strong>Coverage:</strong> Sweden &amp; Norway grid (~50 km) &middot;
+        <strong>Scenarios:</strong> Historical, SSP1-1.9, SSP1-2.6, SSP2-4.5, SSP3-7.0, SSP5-8.5
+      </p>
+    </div>
+  </article>
+
+  <article class="tool-card placeholder" aria-hidden="true">
+    <div class="tool-card-body">
+      <div class="tool-tags"><span class="tag tag-soon">Coming soon</span></div>
+      <h3>Depredation Risk Explorer</h3>
+      <p class="tool-summary">Grid-level risk of livestock depredation as a function of wolf presence, terrain, and land use. In development.</p>
+    </div>
+  </article>
+</main>
+
+<section id="about" class="band band-alt">
+  <div class="container band-inner">
+    <h2>How to read the outputs</h2>
+    <div class="grid-2">
+      <div>
+        <h4>Scenarios, in plain terms</h4>
+        <p>
+          The Shared Socioeconomic Pathways (SSPs) describe plausible futures for emissions and
+          land use, not forecasts. SSP1-2.6 reflects strong mitigation; SSP5-8.5 reflects a
+          fossil-fuel-intensive path. Compare scenarios rather than trusting any single line
+          (Riahi et al., 2017; IPCC AR6 WGI, 2021).
+        </p>
+      </div>
+      <div>
+        <h4>Density vs. habitat suitability</h4>
+        <p>
+          Density (D_roe, D_moose, Wolf Density) reflects expected animals per unit area.
+          Habitat suitability (H) is a 0&ndash;1 index of environmental fit under climate and
+          land-cover covariates, independent of current population. Use both together for
+          management decisions.
+        </p>
+      </div>
+      <div>
+        <h4>Uncertainty</h4>
+        <p>
+          Projections carry structural, parameter, and scenario uncertainty. The scenario
+          spread displayed in the time-series charts is the minimum uncertainty band; actual
+          realisations may fall outside it. Treat grid-level numbers as directional, not
+          precise counts (Araújo &amp; Guisan, 2006).
+        </p>
+      </div>
+      <div>
+        <h4>Privacy &amp; performance</h4>
+        <p>
+          Nothing you click leaves your browser. The tool loads the model outputs once, then
+          runs locally using Pyodide/stlite. First load takes ~20&ndash;40 seconds on a typical
+          connection; subsequent interactions are instant.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="methods" class="band">
+  <div class="container band-inner">
+    <h2>Methods, briefly</h2>
+    <p>
+      Species distribution and density surfaces are fitted from national monitoring data
+      (Scandinavian wolf monitoring, moose and roe deer harvest statistics, and habitat
+      covariates) and projected forward using ISIMIP-bias-corrected climate forcings for the
+      five SSP pathways. The wolf sub-model couples pack size, territory number, and territory
+      size to solitary-wolf dispersal, consistent with established Scandinavian wolf demography
+      (Chapron et al., 2016; Wabakken et al., 2001). Prey densities are linked to climate-driven
+      habitat suitability following Guisan &amp; Thuiller (2005). Full methods and code are in
+      the repository README and the forthcoming manuscript.
+    </p>
+    <ul class="refs">
+      <li>Araújo MB &amp; Guisan A (2006). <em>Five (or so) challenges for species distribution modelling.</em> J. Biogeogr. 33, 1677&ndash;1688.</li>
+      <li>Chapron G et al. (2016). <em>Estimating wolf population size and trend in Scandinavia.</em> J. Wildl. Manage.</li>
+      <li>Guisan A &amp; Thuiller W (2005). <em>Predicting species distribution: offering more than simple habitat models.</em> Ecol. Lett. 8, 993&ndash;1009.</li>
+      <li>IPCC AR6 WGI (2021). <em>Climate Change 2021: The Physical Science Basis.</em></li>
+      <li>Riahi K et al. (2017). <em>The Shared Socioeconomic Pathways and their energy, land use, and greenhouse gas emissions implications.</em> Glob. Environ. Change 42, 153&ndash;168.</li>
+      <li>Wabakken P et al. (2001). <em>The recovery, distribution, and population dynamics of wolves on the Scandinavian peninsula, 1978&ndash;1998.</em> Can. J. Zool. 79, 710&ndash;725.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="cite" class="band band-alt">
+  <div class="container band-inner">
+    <h2>How to cite</h2>
+    <p>If you use outputs from these tools in a report, plan, or publication, please cite:</p>
+    <pre class="cite-block">Ghosh, S. (2026). Scandinavian Species Distribution Models v2.0 [Interactive research tool].
+Wolf-model repository, IIASA postdoctoral research.
+Retrieved from https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</pre>
+  </div>
+</section>
+
+<footer id="contact" class="site-footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="brand-title">Dr. Sinchan Ghosh</div>
+      <div class="brand-sub">sinchanghosh110@gmail.com</div>
+    </div>
+    <div class="footer-links">
+      <a href="#tools">Tools</a>
+      <a href="#methods">Methods</a>
+      <a href="#cite">Cite</a>
+    </div>
+    <div class="footer-legal">
+      &copy; 2026. Tools provided for research and management use. No warranty of fitness for a particular purpose.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

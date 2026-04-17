@@ -1,0 +1,78 @@
+<!--
+  ============================================================================
+  Drop-in tile for gsinchanpostdoc/Profile (personal site).
+  Paste this block inside the main content area of the Profile site's
+  index.html to expose the Scandinavian Species Distribution Models tool
+  to stakeholders.
+
+  - The tile links out to the tool hosted from the Wolf-model repository.
+  - Uses inline styles so it does not depend on your existing stylesheet.
+  - Opens the tool in a new tab (target="_blank"); adjust if the Profile
+    site prefers same-tab navigation.
+  ============================================================================
+-->
+<section id="research-tools" style="max-width: 980px; margin: 48px auto; padding: 0 20px; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #161a18;">
+
+  <h2 style="font-family: 'Source Serif 4', Georgia, serif; font-size: 28px; color: #1f3a2e; margin: 0 0 8px;">
+    Research Tools
+  </h2>
+  <p style="color: #5a615c; margin: 0 0 24px; max-width: 680px;">
+    Interactive, browser-hosted decision-support tools built on peer-reviewed
+    Scandinavian wildlife population models. Designed for foresters, game
+    hunters, and wildlife managers &mdash; no install, no coding.
+  </p>
+
+  <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/"
+     target="_blank" rel="noopener"
+     style="display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #d9d3c2; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 20px rgba(31,58,46,0.08); transition: transform 0.08s ease, box-shadow 0.2s ease;"
+     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.06), 0 10px 28px rgba(31,58,46,0.12)';"
+     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.04), 0 6px 20px rgba(31,58,46,0.08)';">
+
+    <div style="display: grid; grid-template-columns: 180px 1fr; min-height: 160px;">
+
+      <!-- Preview panel -->
+      <div style="background: linear-gradient(180deg, #dfe9dc 0%, #b8cfb0 100%); position: relative; min-height: 160px;">
+        <svg viewBox="0 0 180 160" preserveAspectRatio="xMidYMid slice" style="width:100%; height:100%; display:block;">
+          <path d="M0 115 C 30 95, 55 125, 85 108 S 135 92, 180 112 L 180 160 L 0 160 Z" fill="#4a6b4a" opacity="0.75"/>
+          <path d="M0 130 C 40 112, 70 140, 105 122 S 160 108, 180 128 L 180 160 L 0 160 Z" fill="#2f4a34" opacity="0.88"/>
+          <g fill="#c94c3a">
+            <circle cx="40" cy="70" r="5"/><circle cx="72" cy="55" r="8"/>
+            <circle cx="108" cy="72" r="6"/><circle cx="140" cy="48" r="9"/>
+          </g>
+          <g fill="#1f3a2e" opacity="0.6">
+            <circle cx="35" cy="95" r="3"/><circle cx="90" cy="100" r="4"/>
+            <circle cx="135" cy="92" r="3"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px 24px;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+          <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; background: #1f3a2e; color: #fff;">Live</span>
+          <span style="font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; background: #efeadd; color: #2e3531; border: 1px solid #d9d3c2;">Scandinavia</span>
+          <span style="font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; background: #efeadd; color: #2e3531; border: 1px solid #d9d3c2;">Wolf &middot; Roe deer &middot; Moose</span>
+          <span style="font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; background: #efeadd; color: #2e3531; border: 1px solid #d9d3c2;">SSP 2025&ndash;2060</span>
+        </div>
+
+        <h3 style="font-family: 'Source Serif 4', Georgia, serif; font-size: 20px; color: #1f3a2e; margin: 4px 0 8px;">
+          Scandinavian Species Distribution Models
+        </h3>
+        <p style="color: #2e3531; margin: 0 0 14px; font-size: 14.5px; line-height: 1.55;">
+          Grid-level density and habitat projections for wolves and their prey under
+          five IPCC SSP climate pathways. For foresters, game hunters, and wildlife
+          managers.
+        </p>
+
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13.5px; color: #1f3a2e;">
+          Open the tool &rarr;
+        </span>
+      </div>
+    </div>
+  </a>
+
+  <p style="color: #9aa19c; font-size: 12px; margin: 14px 0 0;">
+    Hosted from the Wolf-model repository &middot; runs entirely in your browser &middot;
+    first load takes 20&ndash;40 seconds.
+  </p>
+</section>

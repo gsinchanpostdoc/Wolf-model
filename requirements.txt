@@ -1,0 +1,11 @@
+# Requirements for Wolf-Prey Ecosystem Explorer (Streamlit map app)
+# Install with: pip install -r requirements.txt
+
+streamlit>=1.56.0
+folium>=0.20.0
+streamlit-folium>=0.27.1
+pandas>=2.2.3
+pyarrow>=23.0.1
+plotly>=6.7.0
+branca>=0.8.2
+numpy>=2.2.3
