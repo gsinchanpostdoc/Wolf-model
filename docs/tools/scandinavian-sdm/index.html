@@ -4,42 +4,124 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Scandinavian Species Distribution Models &mdash; Dr. Sinchan Ghosh</title>
-<meta name="description" content="Interactive wolf, roe deer, and moose distribution and density explorer for Scandinavia. Map: SSP projections 2025-2060. Time series: full 1999-2060 record." />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@0.80.5/build/stlite.css" />
+<meta name="description" content="Native in-browser explorer for wolf, roe deer, and moose density and habitat projections across 374 Scandinavian grid cells under five IPCC SSP scenarios, 2025-2060 (map) and 1999-2060 (time series). Rebuilt in Leaflet + Plotly.js + Arquero for sub-second interactivity." />
+
+<!-- Leaflet (map) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Plotly.js (charts) -->
+<script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+<!-- Arquero (dataframe filtering) -->
+<script defer src="https://cdn.jsdelivr.net/npm/arquero@5.4.0/dist/arquero.min.js"></script>
+
+<!-- Typography -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet" />
+
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #f7f5ef; font-family: 'Inter', system-ui, sans-serif; }
-  .tool-header {
-    background: #1f3a2e; color: #fff; padding: 10px 20px; display: flex; align-items: center;
-    justify-content: space-between; border-bottom: 1px solid #0f1f17; font-size: 14px;
-  }
-  .tool-header a { color: #a9c7a0; text-decoration: none; font-weight: 500; }
-  .tool-header a:hover { color: #fff; }
-  .tool-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; }
-  .tool-meta { color: #a9c7a0; font-size: 12px; }
-  #root { height: calc(100vh - 42px); }
-  .loading-screen {
-    position: absolute; inset: 42px 0 0 0; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; background: #f7f5ef; z-index: 10; transition: opacity 0.4s ease;
-    pointer-events: none;
-  }
-  .loading-screen.hidden { opacity: 0; }
-  .loader-card {
-    max-width: 520px; text-align: center; padding: 32px;
-    background: #fff; border: 1px solid #d9d3c2; border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(31,58,46,0.08);
-  }
-  .loader-card h2 {
-    font-family: 'Source Serif 4', Georgia, serif; color: #1f3a2e; margin: 0 0 8px; font-size: 22px;
-  }
-  .loader-card p { color: #5a615c; margin: 4px 0; font-size: 14px; }
-  .spinner {
-    width: 28px; height: 28px; border: 3px solid #dfe9dc; border-top-color: #1f3a2e;
-    border-radius: 50%; animation: spin 0.9s linear infinite; margin: 12px auto 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+:root {
+  --green-dark: #1f3a2e;
+  --green: #2f5a47;
+  --green-soft: #a9c7a0;
+  --cream: #f7f5ef;
+  --cream-2: #efeadd;
+  --text: #161a18;
+  --muted: #5a615c;
+  --border: #d9d3c2;
+  --accent: #c4a44a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--cream); color: var(--text); }
+.tool-header {
+  background: var(--green-dark); color: #fff; padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #0f1f17; font-size: 14px;
+}
+.tool-header .tool-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 16px; }
+.tool-header .tool-meta { color: var(--green-soft); font-size: 12px; margin-left: 8px; }
+.tool-header a { color: var(--green-soft); text-decoration: none; font-weight: 500; }
+.tool-header a:hover { color: #fff; }
+
+.app { display: grid; grid-template-columns: 300px 1fr; gap: 0; min-height: calc(100vh - 42px); }
+@media (max-width: 900px) { .app { grid-template-columns: 1fr; } }
+
+.sidebar {
+  background: var(--cream-2); border-right: 1px solid var(--border);
+  padding: 20px; overflow-y: auto;
+}
+.sidebar h3 {
+  font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark);
+  font-size: 15px; margin: 0 0 14px; letter-spacing: 0.01em;
+}
+.sidebar label {
+  display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); font-weight: 600; margin-bottom: 6px; margin-top: 14px;
+}
+.sidebar select, .sidebar input[type=range], .sidebar input[type=number] {
+  width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: #fff; font-size: 13px; color: var(--text); font-family: inherit;
+}
+.sidebar select:focus, .sidebar input:focus { outline: 2px solid var(--green); outline-offset: -1px; }
+.year-row { display: flex; align-items: center; gap: 10px; }
+.year-row input[type=number] { width: 80px; }
+.year-row input[type=range] { flex: 1; }
+.sidebar .note {
+  font-size: 11px; color: var(--muted); line-height: 1.5;
+  border-top: 1px solid var(--border); padding-top: 14px; margin-top: 20px;
+}
+
+.main { padding: 24px 28px 40px; overflow-x: hidden; }
+.map-title {
+  font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark);
+  font-size: 20px; margin: 0 0 12px;
+}
+.map-title .chip {
+  display: inline-block; background: var(--green-dark); color: #fff;
+  padding: 2px 10px; border-radius: 999px; font-size: 12px; font-family: 'Inter', sans-serif;
+  font-weight: 500; margin-left: 10px; vertical-align: middle;
+}
+#map { height: 560px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
+.legend-row { display: flex; align-items: center; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.legend-bar { height: 10px; width: 220px; border-radius: 3px; border: 1px solid var(--border); }
+.legend-ticks { display: flex; justify-content: space-between; width: 220px; font-size: 10px; color: var(--muted); }
+
+.section-divider { border: none; border-top: 1px solid var(--border); margin: 32px 0 24px; }
+.ts-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.ts-header h2 { font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark); font-size: 18px; margin: 0; }
+.ts-header .grid-pick { min-width: 320px; display: flex; flex-direction: column; }
+.ts-header .grid-pick label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.ts-header select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: #fff; font-family: inherit; }
+
+.ts-caption { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 4px 0 16px; }
+.ts-grid-title { font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark); font-size: 15px; margin: 18px 0 10px; font-weight: 600; }
+.ts-group-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin: 22px 0 8px; }
+.ts-grid { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1200px) { .ts-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .ts-grid { grid-template-columns: 1fr; } }
+.chart-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px 10px; }
+.chart-card .chart-el { height: 300px; }
+
+.footer-note {
+  margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); line-height: 1.55;
+}
+
+.loading {
+  position: fixed; inset: 42px 0 0 0; background: var(--cream);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 50; transition: opacity 0.3s;
+}
+.loading.hidden { opacity: 0; pointer-events: none; }
+.spinner {
+  width: 28px; height: 28px; border: 3px solid #dfe9dc; border-top-color: var(--green-dark);
+  border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 14px;
+}
+.loading h2 { font-family: 'Source Serif 4', Georgia, serif; color: var(--green-dark); margin: 0 0 4px; font-size: 18px; }
+.loading p { color: var(--muted); font-size: 13px; margin: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -47,68 +129,435 @@
 <div class="tool-header">
   <div>
     <span class="tool-title">Scandinavian Species Distribution Models</span>
-    <span class="tool-meta">&nbsp;&middot;&nbsp; v2.0 &middot; Wolf, Roe deer, Moose &middot; Map 2025&ndash;2060 &middot; Time series 1999&ndash;2060</span>
+    <span class="tool-meta">v2.1 &middot; Wolf, Roe deer, Moose &middot; Map 2025&ndash;2060 &middot; Time series 1999&ndash;2060</span>
   </div>
   <a href="../../">&larr; Back to Research Tools</a>
 </div>
 
-<div id="root"></div>
-
-<div id="loader" class="loading-screen" aria-live="polite">
-  <div class="loader-card">
-    <div class="spinner"></div>
-    <h2>Preparing the model viewer</h2>
-    <p>This interactive tool runs entirely in your browser. No data leaves your device.</p>
-    <p>First load takes <strong>20&ndash;40 seconds</strong> while Python and the map libraries initialise.</p>
-    <p style="color:#9aa19c; font-size:12px; margin-top:14px;">If the loader stays on screen for more than 2 minutes, refresh the page.</p>
-  </div>
+<div id="loader" class="loading" aria-live="polite">
+  <div class="spinner"></div>
+  <h2>Loading model outputs</h2>
+  <p>Fetching projections for 374 grid cells under five IPCC SSP pathways.</p>
+  <p style="color:#9aa19c; font-size:11px; margin-top:10px;">Native build &mdash; first load typically under 2 seconds.</p>
 </div>
 
-<script type="module">
-  import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@0.80.5/build/stlite.js";
+<div class="app" id="app" style="visibility:hidden;">
 
-  mount(
-    {
-      requirements: [
-        "folium==0.17.0",
-        "branca==0.7.2",
-        "plotly==5.22.0",
-        "pyarrow==16.1.0",
-      ],
-      entrypoint: "wolf_map.py",
-      files: {
-        "wolf_map.py": { url: "./wolf_map.py" },
-        "data/map_data.parquet": { url: "./data/map_data.parquet" },
-      },
-      streamlitConfig: {
-        "theme.base": "light",
-        "theme.primaryColor": "#1f3a2e",
-        "theme.backgroundColor": "#f7f5ef",
-        "theme.secondaryBackgroundColor": "#efeadd",
-        "theme.textColor": "#161a18",
-        "theme.font": "sans serif",
-      },
-    },
-    document.getElementById("root")
-  ).then(() => {
-    // Hide the loader once the Streamlit app mounts. Give the iframe a moment to paint.
-    setTimeout(() => {
-      const loader = document.getElementById("loader");
-      if (loader) {
-        loader.classList.add("hidden");
-        setTimeout(() => loader.remove(), 500);
-      }
-    }, 1500);
-  }).catch((err) => {
-    console.error("stlite failed to mount:", err);
-    const loader = document.getElementById("loader");
-    if (loader) {
-      loader.querySelector(".loader-card").innerHTML =
-        '<h2 style="color:#c94c3a">Could not load the viewer</h2>' +
-        '<p>An error occurred while starting Python in the browser.</p>' +
-        '<p style="color:#9aa19c;font-size:12px">' + String(err).replace(/</g, "&lt;") + '</p>';
+  <aside class="sidebar">
+    <h3>Map controls</h3>
+
+    <label for="species">Species</label>
+    <select id="species"></select>
+
+    <label for="variable">Variable</label>
+    <select id="variable"></select>
+
+    <label for="scenario">Scenario</label>
+    <select id="scenario"></select>
+
+    <label for="yearNum">Year</label>
+    <div class="year-row">
+      <input type="number" id="yearNum" min="2025" max="2060" step="1" value="2025" />
+      <input type="range" id="yearRange" min="2025" max="2060" step="1" value="2025" />
+    </div>
+
+    <div class="note">
+      Projections follow ISIMIP bias-corrected CMIP6 forcings for the five Shared Socioeconomic Pathways (Riahi et&nbsp;al., 2017; IPCC AR6 WGI, 2021). Read outputs as directional under scenario uncertainty, not as precise counts. 374 grid cells on a ~50&nbsp;km lattice across Norway and Sweden; Svalbard and edge cells excluded.
+    </div>
+  </aside>
+
+  <section class="main">
+
+    <div class="map-title" id="mapTitle">
+      Variable &mdash; Scenario (Year)
+      <span class="chip" id="mapChip">374 grids</span>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="legend-row">
+      <span id="legendLabel">Legend</span>
+      <div>
+        <div class="legend-bar" id="legendBar"></div>
+        <div class="legend-ticks"><span id="legendMin">0</span><span id="legendMid"></span><span id="legendMax">1</span></div>
+      </div>
+    </div>
+
+    <hr class="section-divider" />
+
+    <div class="ts-header">
+      <div>
+        <h2>Per-grid time series (1999&ndash;2060)</h2>
+        <p class="ts-caption" style="margin-top:4px;">Select a Grid&nbsp;ID to inspect its full historical record (1999&ndash;2015) alongside projections across all five SSP scenarios (2016&ndash;2060). The map above restricts to 2025&ndash;2060 for stakeholder decisions; this panel retains the full record as baseline context.</p>
+      </div>
+      <div class="grid-pick">
+        <label for="gridPick">Grid ID</label>
+        <select id="gridPick"></select>
+      </div>
+    </div>
+
+    <div class="ts-grid-title" id="gridTitle">Grid</div>
+
+    <div class="ts-group-title">Wolf dynamics</div>
+    <div class="ts-grid" id="wolfGroup"></div>
+
+    <div class="ts-group-title">Prey density &amp; habitat</div>
+    <div class="ts-grid" id="preyGroup"></div>
+
+    <div class="ts-group-title">Model-predicted densities</div>
+    <div class="ts-grid" id="predGroup"></div>
+
+    <p class="footer-note">
+      Data: 374 Scandinavian grid cells (Norway&nbsp;+ Sweden) on a ~50&nbsp;km lattice. Svalbard and edge-case cells with incomplete prediction coverage have been excluded. Model version v2.0. Native browser build using Leaflet, Plotly.js, and Arquero; no Python runtime required; no data leaves your device.
+    </p>
+
+  </section>
+
+</div>
+
+<script>
+/* =========================================================================
+ * Scandinavian SDM Explorer — native browser rebuild
+ * Feature parity with the stlite build. Author: Dr. Sinchan Ghosh, 2026.
+ * ========================================================================= */
+
+const DATA_URL = "./data/data.json";
+
+const MAP_SCENARIO_LABELS = {
+  ssp119: "SSP1-1.9 (strong mitigation)",
+  ssp126: "SSP1-2.6 (sustainability)",
+  ssp245: "SSP2-4.5 (middle of the road)",
+  ssp370: "SSP3-7.0 (regional rivalry)",
+  ssp585: "SSP5-8.5 (fossil-fuelled)",
+};
+const TS_SCENARIO_LABELS = {
+  historical: "Historical (1999–2015)",
+  ssp119: "SSP 1-1.9",
+  ssp126: "SSP 1-2.6",
+  ssp245: "SSP 2-4.5",
+  ssp370: "SSP 3-7.0",
+  ssp585: "SSP 5-8.5",
+};
+const SCENARIO_COLORS = {
+  historical: "#333333",
+  ssp119: "#1b9e77",
+  ssp126: "#66a61e",
+  ssp245: "#e6ab02",
+  ssp370: "#e7298a",
+  ssp585: "#d95f02",
+};
+
+const SPECIES_VARIABLES = {
+  "Wolf": [
+    ["WD", "Wolf Density (WD)"],
+    ["WP_total", "Pack Size (WP_total)"],
+    ["NT", "Territory Number (NT)"],
+    ["mean_ST", "Territory Size (mean_ST)"],
+    ["W_solitary", "Solitary Wolves (W_solitary)"],
+    ["pred_wolf_density", "Predicted Wolf Density"],
+  ],
+  "Roe Deer": [
+    ["D_roe", "Deer Density (D_roe)"],
+    ["H", "Habitat Suitability (H)"],
+    ["pred_roe_density", "Predicted Roe Deer Density"],
+  ],
+  "Moose": [
+    ["D_moose", "Moose Density (D_moose)"],
+    ["H", "Habitat Suitability (H)"],
+    ["pred_moose_density", "Predicted Moose Density"],
+  ],
+};
+const SPECIES_PALETTES = {
+  "Wolf": ["#ffffb2", "#fd8d3c", "#bd0026"],
+  "Roe Deer": ["#f7fcf5", "#74c476", "#00441b"],
+  "Moose": ["#f2f0f7", "#9e9ac8", "#4a1486"],
+};
+
+const TS_GROUPS = {
+  wolfGroup: [
+    ["WD", "Wolf Density"],
+    ["WP_total", "Pack Size"],
+    ["NT", "Territory Number"],
+    ["mean_ST", "Territory Size"],
+  ],
+  preyGroup: [
+    ["D_roe", "Roe Deer Density"],
+    ["D_moose", "Moose Density"],
+    ["H", "Habitat Suitability"],
+  ],
+  predGroup: [
+    ["pred_wolf_density", "Predicted Wolf Density"],
+    ["pred_roe_density", "Predicted Roe Deer Density"],
+    ["pred_moose_density", "Predicted Moose Density"],
+  ],
+};
+
+/* ---------- Utility: 3-stop linear interpolation in sRGB ---------- */
+function hexToRgb(hex) {
+  const h = hex.replace("#","");
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgbToHex([r,g,b]) {
+  const to = (x) => Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0");
+  return "#" + to(r) + to(g) + to(b);
+}
+function interp(t, c0, c1) {
+  return [0,1,2].map(i => c0[i] + (c1[i]-c0[i])*t);
+}
+function scale3(palette) {
+  // palette = [low, mid, high]; returns fn(t in [0,1]) -> hex
+  const [c0,c1,c2] = palette.map(hexToRgb);
+  return (t) => {
+    t = Math.max(0, Math.min(1, t));
+    return rgbToHex(t < 0.5 ? interp(t*2, c0, c1) : interp((t-0.5)*2, c1, c2));
+  };
+}
+function legendGradient(palette) {
+  return `linear-gradient(to right, ${palette[0]}, ${palette[1]}, ${palette[2]})`;
+}
+
+/* ---------- Main bootstrap ---------- */
+(async function main() {
+  // Wait for deferred scripts to load
+  await new Promise((ok) => window.addEventListener("load", ok, { once: true }));
+
+  const t0 = performance.now();
+  let payload;
+  try {
+    const resp = await fetch(DATA_URL, { cache: "force-cache" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    payload = await resp.json();
+  } catch (err) {
+    document.getElementById("loader").innerHTML =
+      `<h2 style="color:#c94c3a">Could not load model data</h2>
+       <p>${String(err).replace(/</g,"&lt;")}</p>
+       <p style="color:#9aa19c;font-size:11px;margin-top:10px;">Try a hard refresh; the data file is ~500 KB gzipped.</p>`;
+    return;
+  }
+
+  const { meta, grids } = payload;
+  const variables = meta.variables;
+  const scenarios = meta.scenarios;
+
+  /* ---- Build Arquero table ---- */
+  const aqCols = { gridId: payload.gridId, year: payload.year, scenarioIdx: payload.scenarioIdx };
+  for (const v of variables) aqCols[v] = payload[v];
+  const table = aq.table(aqCols);
+
+  /* ---- Populate controls ---- */
+  const speciesSel = document.getElementById("species");
+  for (const s of Object.keys(SPECIES_VARIABLES)) {
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = s; speciesSel.append(opt);
+  }
+  const variableSel = document.getElementById("variable");
+  function rebuildVariables() {
+    variableSel.innerHTML = "";
+    for (const [col,label] of SPECIES_VARIABLES[speciesSel.value]) {
+      const opt = document.createElement("option"); opt.value = col; opt.textContent = label; variableSel.append(opt);
     }
+  }
+  const scenarioSel = document.getElementById("scenario");
+  for (const k of Object.keys(MAP_SCENARIO_LABELS)) {
+    const opt = document.createElement("option"); opt.value = k; opt.textContent = MAP_SCENARIO_LABELS[k]; scenarioSel.append(opt);
+  }
+  rebuildVariables();
+
+  const gridPick = document.getElementById("gridPick");
+  for (const g of grids) {
+    const opt = document.createElement("option");
+    opt.value = g.id;
+    opt.textContent = `${g.id} — ${g.county ?? "?"}, ${g.country ?? "?"}`;
+    gridPick.append(opt);
+  }
+  const gridMeta = new Map(grids.map(g => [g.id, g]));
+
+  const yearRange = document.getElementById("yearRange");
+  const yearNum   = document.getElementById("yearNum");
+
+  /* ---- Leaflet map ---- */
+  const map = L.map("map", { preferCanvas: true, scrollWheelZoom: true }).setView([63.0, 15.0], 5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 12, attribution: "© OpenStreetMap contributors, CartoDB",
+  }).addTo(map);
+
+  // One CircleMarker per grid, reused on filter changes
+  const markers = new Map();
+  for (const g of grids) {
+    const m = L.circleMarker([g.lat, g.lon], {
+      radius: 4, weight: 1, color: "#1f3a2e", fillColor: "#a9c7a0",
+      fillOpacity: 0.7, opacity: 0.9,
+    }).addTo(map);
+    m.on("click", () => {
+      gridPick.value = g.id;
+      gridPick.dispatchEvent(new Event("change"));
+      document.getElementById("gridTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    markers.set(g.id, m);
+  }
+
+  /* ---- Map update ---- */
+  function updateMap() {
+    const species  = speciesSel.value;
+    const varCol   = variableSel.value;
+    const scenKey  = scenarioSel.value;
+    const scenIdx  = scenarios.indexOf(scenKey);
+    const year     = parseInt(yearRange.value, 10);
+
+    // Filter with Arquero
+    const view = table
+      .params({ scenIdx, year })
+      .filter((d, $) => d.scenarioIdx === $.scenIdx && d.year === $.year);
+
+    const gidArr = view.array("gridId");
+    const valArr = view.array(varCol);
+
+    // Compute min/max (ignore NaN/null)
+    let vmin = Infinity, vmax = -Infinity;
+    for (const v of valArr) {
+      if (v == null || Number.isNaN(v)) continue;
+      if (v < vmin) vmin = v;
+      if (v > vmax) vmax = v;
+    }
+    if (!Number.isFinite(vmin)) { vmin = 0; vmax = 1; }
+    if (vmax <= vmin) vmax = vmin + 1;
+
+    const palette = SPECIES_PALETTES[species];
+    const color   = scale3(palette);
+
+    // Reset all to low-visibility
+    for (const [, m] of markers) m.setStyle({ opacity: 0.15, fillOpacity: 0.1, radius: 3 });
+
+    for (let i = 0; i < gidArr.length; i++) {
+      const gid = gidArr[i];
+      const v   = valArr[i];
+      const m   = markers.get(gid);
+      if (!m) continue;
+      if (v == null || Number.isNaN(v)) {
+        m.setStyle({ color: "#bbb", fillColor: "#eee", radius: 3, opacity: 0.5, fillOpacity: 0.3 });
+        m.bindTooltip(`Grid ${gid} — no data`, { sticky: true });
+        continue;
+      }
+      const t = (v - vmin) / (vmax - vmin);
+      const c = color(t);
+      const r = 3 + t * 12;
+      m.setStyle({ color: c, fillColor: c, radius: r, opacity: 0.9, fillOpacity: 0.75 });
+      const meta = gridMeta.get(gid) || {};
+      const varLabel = SPECIES_VARIABLES[species].find(([col]) => col === varCol)[1];
+      m.bindTooltip(
+        `<b>Grid ${gid}</b> — ${meta.county ?? "?"}, ${meta.country ?? "?"}<br>` +
+        `${varLabel}: ${v.toPrecision(4)}<br>` +
+        `Year: ${year} · ${MAP_SCENARIO_LABELS[scenKey]}`,
+        { sticky: true }
+      );
+    }
+
+    // Update title + legend
+    const varLabel = SPECIES_VARIABLES[species].find(([col]) => col === varCol)[1];
+    document.getElementById("mapTitle").childNodes[0].nodeValue =
+      `${varLabel} — ${MAP_SCENARIO_LABELS[scenKey]} (${year}) `;
+    document.getElementById("mapChip").textContent = `${gidArr.length} grids`;
+    document.getElementById("legendLabel").textContent = varLabel;
+    document.getElementById("legendBar").style.background = legendGradient(palette);
+    document.getElementById("legendMin").textContent = vmin.toPrecision(3);
+    document.getElementById("legendMid").textContent = ((vmin + vmax) / 2).toPrecision(3);
+    document.getElementById("legendMax").textContent = vmax.toPrecision(3);
+  }
+
+  /* ---- Time-series charts ---- */
+  const plotRegistry = new Map(); // col -> div id
+
+  function buildChartSkeleton(groupId, group) {
+    const host = document.getElementById(groupId);
+    host.innerHTML = "";
+    for (const [col, label] of group) {
+      const card = document.createElement("div");
+      card.className = "chart-card";
+      const title = document.createElement("div");
+      title.style.cssText = "font-size:12px; color:var(--muted); padding:6px 4px 2px; font-weight:600;";
+      title.textContent = label;
+      const el = document.createElement("div");
+      el.className = "chart-el";
+      el.id = `chart_${col}`;
+      card.append(title, el);
+      host.append(card);
+      plotRegistry.set(col, el.id);
+    }
+  }
+  buildChartSkeleton("wolfGroup", TS_GROUPS.wolfGroup);
+  buildChartSkeleton("preyGroup", TS_GROUPS.preyGroup);
+  buildChartSkeleton("predGroup", TS_GROUPS.predGroup);
+
+  function updateCharts() {
+    const gid = parseInt(gridPick.value, 10);
+    const meta = gridMeta.get(gid) || {};
+    document.getElementById("gridTitle").textContent =
+      `Grid ${gid} (${meta.county ?? "?"}, ${meta.country ?? "?"})`;
+
+    const gridView = table
+      .params({ gid })
+      .filter((d, $) => d.gridId === $.gid);
+
+    const groups = [...TS_GROUPS.wolfGroup, ...TS_GROUPS.preyGroup, ...TS_GROUPS.predGroup];
+
+    for (const [col, label] of groups) {
+      const traces = [];
+      for (let i = 0; i < scenarios.length; i++) {
+        const scen = scenarios[i];
+        const scenView = gridView
+          .params({ i })
+          .filter((d, $) => d.scenarioIdx === $.i)
+          .orderby("year");
+        const xs = scenView.array("year");
+        const ys = scenView.array(col);
+        if (xs.length === 0) continue;
+        const isHist = scen === "historical";
+        traces.push({
+          x: Array.from(xs), y: Array.from(ys), mode: "lines",
+          name: TS_SCENARIO_LABELS[scen],
+          line: { color: SCENARIO_COLORS[scen], width: isHist ? 2 : 1.4, dash: isHist ? "solid" : "dash" },
+          hovertemplate: "%{x}: %{y:.4g}<extra>" + TS_SCENARIO_LABELS[scen] + "</extra>",
+        });
+      }
+      const layout = {
+        margin: { l: 44, r: 10, t: 8, b: 58 },
+        xaxis: { title: "Year", range: [1998, 2061], showgrid: true, gridcolor: "#eee" },
+        yaxis: { title: label, showgrid: true, gridcolor: "#eee" },
+        shapes: [
+          { type: "line", x0: 2015, x1: 2015, yref: "paper", y0: 0, y1: 1, line: { color: "gray", width: 1, dash: "dot" } },
+          { type: "line", x0: 2025, x1: 2025, yref: "paper", y0: 0, y1: 1, line: { color: "#1f3a2e", width: 1, dash: "dot" } },
+        ],
+        legend: { orientation: "h", y: -0.28, font: { size: 9 } },
+        font: { family: "Inter, sans-serif", size: 11, color: "#161a18" },
+        paper_bgcolor: "#fff", plot_bgcolor: "#fff",
+      };
+      const config = { displayModeBar: false, responsive: true };
+      Plotly.react(plotRegistry.get(col), traces, layout, config);
+    }
+  }
+
+  /* ---- Wiring ---- */
+  speciesSel.addEventListener("change", () => { rebuildVariables(); updateMap(); });
+  variableSel.addEventListener("change", updateMap);
+  scenarioSel.addEventListener("change", updateMap);
+  yearRange.addEventListener("input", () => { yearNum.value = yearRange.value; updateMap(); });
+  yearNum.addEventListener("change", () => {
+    let v = Math.max(2025, Math.min(2060, parseInt(yearNum.value || 2025, 10)));
+    yearNum.value = v; yearRange.value = v; updateMap();
   });
+  gridPick.addEventListener("change", updateCharts);
+
+  // Initial render
+  updateMap();
+  updateCharts();
+
+  // Reveal the app
+  document.getElementById("app").style.visibility = "visible";
+  const loader = document.getElementById("loader");
+  loader.classList.add("hidden");
+  setTimeout(() => loader.remove(), 400);
+
+  console.log(`SDM native build ready in ${(performance.now() - t0).toFixed(0)} ms`);
+})();
 </script>
 
 </body>

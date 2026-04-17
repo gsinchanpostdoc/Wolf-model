@@ -92,7 +92,7 @@ SPECIES_PALETTES = {
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    return pd.read_parquet(DATA_PATH)
+    return pd.read_parquet(DATA_PATH, engine="fastparquet")
 
 
 # ---------------------------------------------------------------------------
