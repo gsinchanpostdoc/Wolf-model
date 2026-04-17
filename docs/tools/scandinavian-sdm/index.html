@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Scandinavian Species Distribution Models &mdash; Dr. Sinchan Ghosh</title>
-<meta name="description" content="Native in-browser explorer for wolf, roe deer, and moose density and habitat projections across 374 Scandinavian grid cells under five IPCC SSP scenarios, 2025-2060 (map) and 1999-2060 (time series). Rebuilt in Leaflet + Plotly.js + Arquero for sub-second interactivity." />
+<meta name="description" content="Native in-browser explorer for wolf density (wolves km-2), wolf habitat suitability (HurdleGBM, 0-1), and roe deer / moose-calf relative density indices (RF, 0-1) across 374 Scandinavian grid cells under five IPCC SSP pathways (SSP1-1.9, SSP1-2.6, SSP2-4.5, SSP3-7.0, SSP5-8.5), 2016-2060 (map) and 1999-2060 (time series). Built on Ghosh, Franklin & Zimmermann (2026) Eq. 1c and Eq. 2. Leaflet + Plotly.js + Arquero." />
 
 <!-- Leaflet (map) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -154,7 +154,7 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
 <div class="tool-header">
   <div>
     <span class="tool-title">Scandinavian Species Distribution Models</span>
-    <span class="tool-meta">v2.2 &middot; Wolf, Roe deer, Moose &middot; Map 2025&ndash;2060 &middot; Time series 1999&ndash;2060</span>
+    <span class="tool-meta">v2.3 &middot; Wolf density &amp; habitat suitability; roe deer &amp; moose-calf RDI &middot; Map 2016&ndash;2060 &middot; Time series 1999&ndash;2060</span>
   </div>
   <a href="../../">&larr; Back to Research Tools</a>
 </div>
@@ -234,7 +234,7 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
     <div class="ts-group-title">Wolf dynamics</div>
     <div class="ts-grid" id="wolfGroup"></div>
 
-    <div class="ts-group-title">Prey density &amp; habitat</div>
+    <div class="ts-group-title">Deer relative density indices (0&ndash;1)</div>
     <div class="ts-grid" id="preyGroup"></div>
 
     <div class="ts-group-title">Model-predicted densities</div>
@@ -245,13 +245,13 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
     </p>
 
     <p class="footer-note" style="margin-top:14px; color:#7a5a10;">
-      <strong>Disclaimer.</strong> This is an interface-testing release. Early review (April&nbsp;2026) flagged that moose and roe deer predictions do not yet appear ecologically reasonable across all grids and scenarios; these outputs are under active validation and must not be cited, redistributed, or used for management decisions until a validated v3 release is announced.
+      <strong>Disclaimer.</strong> Interface-testing release. The deer variables <em>D_roe</em>, <em>D_moose</em>, <em>pred_roe_density</em> and <em>pred_moose_density</em> are <strong>relative density indices on [0,&nbsp;1]</strong> (min&ndash;max-normalised hunter-harvest rates per Eq.&nbsp;1a; Random-Forest projections per Eq.&nbsp;1c), not absolute densities in animals&nbsp;km<sup>&minus;2</sup>. <em>H</em> is the <strong>wolf</strong> habitat suitability (HurdleGBM-predicted relative wolf density per Eq.&nbsp;2), not a prey quantity. Moose refers to <strong>moose calves</strong> (<em>Alces alces</em> calves). Annex&nbsp;6.6 of the underlying paper reports roe-deer validation R<sup>2</sup>&nbsp;=&nbsp;0.855 and moose-calf R<sup>2</sup>&nbsp;=&nbsp;0.446, with moose RMSE rising from 0.072 (2016) to 0.176 (2024); the vegetation&ndash;deer stationarity assumption partially fails for moose after 2020. These outputs are under active review by Dr.&nbsp;Barbara Zimmermann (INN) and must not be cited, redistributed, or used for management decisions until a validated v3 release is announced.
     </p>
 
     <div class="citation-block">
       <span class="cite-label">Suggested citation</span>
       <span class="cite-body">
-        Ghosh, S., Zimmermann, B., &amp; Franklin, O. (2026). <em>Scandinavian Species Distribution Models: a wolf&ndash;roe deer&ndash;moose ecosystem explorer for Norway and Sweden under five IPCC SSP pathways</em> (Interface-testing release, v2.2) [Software]. International Institute for Applied Systems Analysis (IIASA). Available at <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/">https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</a>.
+        Ghosh, S., Zimmermann, B., &amp; Franklin, O. (2026). <em>Scandinavian Species Distribution Models: a wolf&ndash;roe deer&ndash;moose ecosystem explorer for Norway and Sweden under five IPCC SSP pathways</em> (Interface-testing release, v2.3) [Software]. International Institute for Applied Systems Analysis (IIASA). Available at <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/">https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</a>.
       </span>
     </div>
 
@@ -293,22 +293,21 @@ const SCENARIO_COLORS = {
 
 const SPECIES_VARIABLES = {
   "Wolf": [
-    ["WD", "Wolf Density (WD)"],
+    ["WD", "Wolf Density (WD, wolves km\u207B\u00B2)"],
     ["WP_total", "Pack Size (WP_total)"],
     ["NT", "Territory Number (NT)"],
-    ["mean_ST", "Territory Size (mean_ST)"],
+    ["mean_ST", "Territory Size (mean_ST, km\u00B2)"],
     ["W_solitary", "Solitary Wolves (W_solitary)"],
+    ["H", "Wolf Habitat Suitability (H, HurdleGBM RWD, 0\u20131)"],
     ["pred_wolf_density", "Predicted Wolf Density"],
   ],
   "Roe Deer": [
-    ["D_roe", "Deer Density (D_roe)"],
-    ["H", "Habitat Suitability (H)"],
-    ["pred_roe_density", "Predicted Roe Deer Density"],
+    ["D_roe", "Roe Deer Relative Density Index (D_roe, \u03B2-reg, 0\u20131)"],
+    ["pred_roe_density", "Predicted Roe Deer RDI (RF, Eq. 1c, 0\u20131)"],
   ],
-  "Moose": [
-    ["D_moose", "Moose Density (D_moose)"],
-    ["H", "Habitat Suitability (H)"],
-    ["pred_moose_density", "Predicted Moose Density"],
+  "Moose (calves)": [
+    ["D_moose", "Moose-calf Relative Density Index (D_moose, \u03B2-reg, 0\u20131)"],
+    ["pred_moose_density", "Predicted Moose-calf RDI (RF, Eq. 1c, 0\u20131)"],
   ],
 };
 const SPECIES_PALETTES = {
@@ -319,20 +318,20 @@ const SPECIES_PALETTES = {
 
 const TS_GROUPS = {
   wolfGroup: [
-    ["WD", "Wolf Density"],
+    ["WD", "Wolf Density (wolves km\u207B\u00B2)"],
     ["WP_total", "Pack Size"],
     ["NT", "Territory Number"],
-    ["mean_ST", "Territory Size"],
+    ["mean_ST", "Territory Size (km\u00B2)"],
+    ["H", "Wolf Habitat Suitability (H, 0\u20131)"],
   ],
   preyGroup: [
-    ["D_roe", "Roe Deer Density"],
-    ["D_moose", "Moose Density"],
-    ["H", "Habitat Suitability"],
+    ["D_roe", "Roe Deer RDI (D_roe, 0\u20131)"],
+    ["D_moose", "Moose-calf RDI (D_moose, 0\u20131)"],
   ],
   predGroup: [
     ["pred_wolf_density", "Predicted Wolf Density"],
-    ["pred_roe_density", "Predicted Roe Deer Density"],
-    ["pred_moose_density", "Predicted Moose Density"],
+    ["pred_roe_density", "Predicted Roe Deer RDI (RF)"],
+    ["pred_moose_density", "Predicted Moose-calf RDI (RF)"],
   ],
 };
 
