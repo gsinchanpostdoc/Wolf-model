@@ -154,7 +154,7 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
 <div class="tool-header">
   <div>
     <span class="tool-title">Scandinavian Species Distribution Models</span>
-    <span class="tool-meta">v2.3 &middot; Wolf density &amp; habitat suitability; roe deer &amp; moose-calf RDI &middot; Map 2016&ndash;2060 &middot; Time series 1999&ndash;2060</span>
+    <span class="tool-meta">v2.4 &middot; Wolf density &amp; habitat suitability; roe deer &amp; moose-calf RDI &middot; GBIF-calibrated overlays (when available) &middot; Map 2016&ndash;2060 &middot; Time series 1999&ndash;2060</span>
   </div>
   <a href="../../">&larr; Back to Research Tools</a>
 </div>
@@ -248,10 +248,14 @@ html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif;
       <strong>Disclaimer.</strong> Interface-testing release. The deer variables <em>D_roe</em>, <em>D_moose</em>, <em>pred_roe_density</em> and <em>pred_moose_density</em> are <strong>relative density indices on [0,&nbsp;1]</strong> (min&ndash;max-normalised hunter-harvest rates per Eq.&nbsp;1a; Random-Forest projections per Eq.&nbsp;1c), not absolute densities in animals&nbsp;km<sup>&minus;2</sup>. <em>H</em> is the <strong>wolf</strong> habitat suitability (HurdleGBM-predicted relative wolf density per Eq.&nbsp;2), not a prey quantity. Moose refers to <strong>moose calves</strong> (<em>Alces alces</em> calves). Annex&nbsp;6.6 of the underlying paper reports roe-deer validation R<sup>2</sup>&nbsp;=&nbsp;0.855 and moose-calf R<sup>2</sup>&nbsp;=&nbsp;0.446, with moose RMSE rising from 0.072 (2016) to 0.176 (2024); the vegetation&ndash;deer stationarity assumption partially fails for moose after 2020. These outputs are under active review by Dr.&nbsp;Barbara Zimmermann (INN) and must not be cited, redistributed, or used for management decisions until a validated v3 release is announced.
     </p>
 
+    <p class="footer-note" style="margin-top:14px;">
+      <strong>GBIF-calibrated overlay.</strong> When available in the variable menu, columns suffixed <em>_cal</em> show a <strong>capped-weight per-grid bias correction</strong> against independent GBIF occurrence records (<em>Canis lupus</em>, <em>Capreolus capreolus</em>, <em>Alces alces</em>; Norway and Sweden, 1999&ndash;2024) aggregated to the same 50&thinsp;km grid and min&ndash;max-normalised on log(1&nbsp;+&nbsp;n) per <a href="https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.12254">Isaac et&nbsp;al. (2014, <em>Methods Ecol. Evol.</em>)</a>. Maximum GBIF influence is capped at 50&nbsp;% of the per-grid Spearman&nbsp;&rho; over the 1999&ndash;2015 training window; grids with &rho;&nbsp;&le;&nbsp;0 or fewer than 5 overlap years are passed through unchanged. GBIF cannot distinguish moose calves from adults, so <em>D_moose_cal</em> corrects spatial pattern only, not magnitude. <em>gbif_agreement</em> reports the per-grid average &rho; across all three species.
+    </p>
+
     <div class="citation-block">
       <span class="cite-label">Suggested citation</span>
       <span class="cite-body">
-        Ghosh, S., Zimmermann, B., &amp; Franklin, O. (2026). <em>Scandinavian Species Distribution Models: a wolf&ndash;roe deer&ndash;moose ecosystem explorer for Norway and Sweden under five IPCC SSP pathways</em> (Interface-testing release, v2.3) [Software]. International Institute for Applied Systems Analysis (IIASA). Available at <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/">https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</a>.
+        Ghosh, S., Zimmermann, B., &amp; Franklin, O. (2026). <em>Scandinavian Species Distribution Models: a wolf&ndash;roe deer&ndash;moose ecosystem explorer for Norway and Sweden under five IPCC SSP pathways</em> (Interface-testing release, v2.4) [Software]. International Institute for Applied Systems Analysis (IIASA). Available at <a href="https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/">https://gsinchanpostdoc.github.io/Wolf-model/tools/scandinavian-sdm/</a>.
       </span>
     </div>
 
@@ -291,6 +295,9 @@ const SCENARIO_COLORS = {
   ssp585: "#d95f02",
 };
 
+// Core and optional (GBIF-calibrated) variables. Optional entries are
+// filtered out at render time if the column is missing from data.json,
+// so the tool stays functional before the calibration pipeline has been run.
 const SPECIES_VARIABLES = {
   "Wolf": [
     ["WD", "Wolf Density (WD, wolves km\u207B\u00B2)"],
@@ -299,15 +306,21 @@ const SPECIES_VARIABLES = {
     ["mean_ST", "Territory Size (mean_ST, km\u00B2)"],
     ["W_solitary", "Solitary Wolves (W_solitary)"],
     ["H", "Wolf Habitat Suitability (H, HurdleGBM RWD, 0\u20131)"],
+    ["H_cal", "Wolf Habitat Suitability (H, GBIF-calibrated, 0\u20131)"],
     ["pred_wolf_density", "Predicted Wolf Density"],
+    ["gbif_agreement", "GBIF Agreement Index (per-grid \u03C1, \u22121\u20131)"],
   ],
   "Roe Deer": [
     ["D_roe", "Roe Deer Relative Density Index (D_roe, \u03B2-reg, 0\u20131)"],
+    ["D_roe_cal", "Roe Deer RDI (D_roe, GBIF-calibrated, 0\u20131)"],
     ["pred_roe_density", "Predicted Roe Deer RDI (RF, Eq. 1c, 0\u20131)"],
+    ["pred_roe_density_cal", "Predicted Roe Deer RDI (RF, GBIF-calibrated, 0\u20131)"],
   ],
   "Moose (calves)": [
     ["D_moose", "Moose-calf Relative Density Index (D_moose, \u03B2-reg, 0\u20131)"],
+    ["D_moose_cal", "Moose-calf RDI (D_moose, GBIF-calibrated, 0\u20131)"],
     ["pred_moose_density", "Predicted Moose-calf RDI (RF, Eq. 1c, 0\u20131)"],
+    ["pred_moose_density_cal", "Predicted Moose-calf RDI (RF, GBIF-calibrated, 0\u20131)"],
   ],
 };
 const SPECIES_PALETTES = {
@@ -393,9 +406,15 @@ function legendGradient(palette) {
     const opt = document.createElement("option"); opt.value = s; opt.textContent = s; speciesSel.append(opt);
   }
   const variableSel = document.getElementById("variable");
+  // Which columns did data.json actually ship? Used to hide GBIF-calibrated
+  // entries when the calibration pipeline has not yet been run.
+  const presentCols = new Set(payload.meta && payload.meta.variables
+                              ? payload.meta.variables
+                              : Object.keys(payload).filter(k => Array.isArray(payload[k])));
   function rebuildVariables() {
     variableSel.innerHTML = "";
     for (const [col,label] of SPECIES_VARIABLES[speciesSel.value]) {
+      if (!presentCols.has(col)) continue;
       const opt = document.createElement("option"); opt.value = col; opt.textContent = label; variableSel.append(opt);
     }
   }

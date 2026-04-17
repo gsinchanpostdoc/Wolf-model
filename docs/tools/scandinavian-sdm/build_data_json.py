@@ -24,10 +24,20 @@ except ImportError:
     sys.exit("pandas is required. Install with: pip install pandas fastparquet")
 
 SCENARIOS = ["historical", "ssp119", "ssp126", "ssp245", "ssp370", "ssp585"]
+# Core model variables. Order is preserved in the browser dropdown.
 VARIABLES = [
     "NT", "WP_total", "W_solitary", "n_territories", "mean_ST",
     "WD", "D_roe", "D_moose", "H",
     "pred_wolf_density", "pred_roe_density", "pred_moose_density",
+]
+# GBIF-calibrated variables (Ghosh, Franklin & Zimmermann 2026 Eq. 1a mirror;
+# Isaac et al. 2014 citizen-science normalisation; capped-weight per-grid
+# bias shift). Only emitted to data.json if the parquet carries them, so
+# the tool keeps working before the calibration pass has been run.
+OPTIONAL_VARIABLES = [
+    "D_roe_cal", "D_moose_cal",
+    "pred_roe_density_cal", "pred_moose_density_cal",
+    "H_cal", "gbif_agreement",
 ]
 
 
@@ -57,9 +67,16 @@ def main() -> None:
         .to_dict(orient="records")
     )
 
+    # Only advertise optional GBIF-calibrated variables that actually
+    # exist in the parquet (the calibration pipeline is run separately).
+    present_optional = [v for v in OPTIONAL_VARIABLES if v in df.columns]
+    all_variables = VARIABLES + present_optional
+
     payload = {
         "meta": {
-            "variables": VARIABLES,
+            "variables": all_variables,
+            "core_variables": VARIABLES,
+            "calibrated_variables": present_optional,
             "scenarios": SCENARIOS,
             "map_year_min": 2025,
             "map_year_max": 2060,
@@ -71,7 +88,7 @@ def main() -> None:
         "year": df.year.astype(int).tolist(),
         "scenarioIdx": df.scenario.map({s: i for i, s in enumerate(SCENARIOS)}).astype(int).tolist(),
     }
-    for v in VARIABLES:
+    for v in all_variables:
         payload[v] = [_round(x) for x in df[v].tolist()]
 
     with open(dst, "w", encoding="utf-8") as f:
